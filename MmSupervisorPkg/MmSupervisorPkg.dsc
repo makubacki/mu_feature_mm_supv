@@ -9,6 +9,7 @@
 # *******************************************************************************
 
 
+# Temporary change to test mu_devops
 
 [Defines]
   PLATFORM_NAME                  = MmSupervisor
