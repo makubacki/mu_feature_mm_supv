@@ -9,8 +9,8 @@ resources:
   repositories:
     - repository: mu_devops
       type: github
-      endpoint: microsoft
-      name: microsoft/mu_devops
+      endpoint: makubacki
+      name: makubacki/mu_devops
       ref: main
 
 trigger:
