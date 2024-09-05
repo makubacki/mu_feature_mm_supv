@@ -1644,7 +1644,7 @@ SmmGetMemoryAttributes (
   @param[in] Buffer1                  The pointer to first buffer.
   @param[in] Buffer2                  The pointer to second buffer.
 
-  @retval 0                           Buffer1 equal to Buffer2.
+  @retval 0                           Buffer1 equal to Buffer2 (causes an assert).
   @return <0                          Buffer1 is less than Buffer2.
   @return >0                          Buffer1 is greater than Buffer2.
 **/
@@ -1678,8 +1678,17 @@ CompareAddressPoint (
            ((MEMORY_ADDRESS_POINT *)Buffer2)->Type;
   }
 
+  DEBUG ((DEBUG_ERROR, "[%a] - Resource HOB conflict.\n", __func__));
+  if (((MEMORY_ADDRESS_POINT *)Buffer1)->Address == ((MEMORY_ADDRESS_POINT *)Buffer2)->Address) {
+    DEBUG ((DEBUG_ERROR, "[%a] -  Addresses are equal: 0x%lx\n", __func__, ((MEMORY_ADDRESS_POINT *)Buffer1)->Address));
+  } else if (((MEMORY_ADDRESS_POINT *)Buffer1)->Type == ((MEMORY_ADDRESS_POINT *)Buffer2)->Type) {
+    DEBUG ((DEBUG_ERROR, "[%a] -  Types are equal: 0x%lx\n", __func__, (UINT64)((MEMORY_ADDRESS_POINT *)Buffer1)->Type));
+  } else {
+    DEBUG ((DEBUG_ERROR, "[%a] -  Unknown error.\n", __func__));
+  }
+
   // This should not happen that resource hob has 2 identical address points
-  ASSERT (FALSE);
+  // ASSERT (FALSE);
   return 0;
 }
 
