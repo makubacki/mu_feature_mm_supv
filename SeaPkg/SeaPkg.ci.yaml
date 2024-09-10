@@ -42,8 +42,18 @@
     },
 
     ## options defined ci/Plugin/DscCompleteCheck
+    # Temporary exclusions while using local MbedTlibLib
     "DscCompleteCheck": {
-        "IgnoreInf": [],
+        "IgnoreInf": [
+          "SeaPkg/Library/MbedTlsLib/MbedTlsLib.inf",
+          "SeaPkg/Library/MbedTlsLib/MbedTlsLbFull.inf",
+          "SeaPkg/Library/BaseCryptLibMbedTls/BaseCryptLib.inf",
+          "SeaPkg/Library/BaseCryptLibMbedTls/PeiCryptLib.inf",
+          "SeaPkg/Library/BaseCryptLibMbedTls/RuntimeCryptLib.inf",
+          "SeaPkg/Library/BaseCryptLibMbedTls/SecCryptLib.inf",
+          "SeaPkg/Library/BaseCryptLibMbedTls/SmmCryptLib.inf",
+          "SeaPkg/Library/BaseCryptLibMbedTls/TestBaseCryptLib.inf",
+          ],
         "DscPath": "SeaPkg.dsc"
     },
 
