@@ -470,7 +470,9 @@ InitBasicContext (
   )
 {
   mHostContextCommon.HostContextPerCpu         = AllocatePages (STM_SIZE_TO_PAGES (sizeof (SEA_HOST_CONTEXT_PER_CPU)) * mHostContextCommon.CpuNum);
+  DEBUG ((DEBUG_INFO, "[%a] - (CpuNum = %d) mHostContextCommon.HostContextPerCpu = 0x%p.\n", __func__, mHostContextCommon.CpuNum, mHostContextCommon.HostContextPerCpu));
   mGuestContextCommonNormal.GuestContextPerCpu = AllocatePages (STM_SIZE_TO_PAGES (sizeof (SEA_GUEST_CONTEXT_PER_CPU)) * mHostContextCommon.CpuNum);
+  DEBUG ((DEBUG_INFO, "[%a] - (CpuNum = %d) mGuestContextCommonNormal.GuestContextPerCpu = 0x%p.\n", __func__, mHostContextCommon.CpuNum, mGuestContextCommonNormal.GuestContextPerCpu));
 }
 
 /**
@@ -661,8 +663,10 @@ BspInit (
       mHostContextCommon.PhysicalAddressBits = 32;
     }
   }
+  DEBUG ((EFI_D_INFO, "mHostContextCommon.PhysicalAddressBits - 0x%08x!\n", (UINT8)mHostContextCommon.PhysicalAddressBits));
 
   mHostContextCommon.MaximumSupportAddress = (LShiftU64 (1, mHostContextCommon.PhysicalAddressBits) - 1);
+  DEBUG ((EFI_D_INFO, "mHostContextCommon.MaximumSupportAddress - 0x%lx!\n", (UINT8)mHostContextCommon.MaximumSupportAddress));
 
   mHostContextCommon.PageTable = AsmReadCr3 ();
   AsmReadGdtr (&mHostContextCommon.Gdtr);
@@ -786,13 +790,14 @@ CommonInit (
   }
 
   mHostContextCommon.HostContextPerCpu[Index].Index  = Index;
-  mHostContextCommon.HostContextPerCpu[Index].ApicId = (UINT8)ReadLocalApicId ();
+  mHostContextCommon.HostContextPerCpu[Index].ApicId = ReadLocalApicId ();
 
   StmHeader = mHostContextCommon.StmHeader;
   StackBase = (UINTN)StmHeader +
               STM_PAGES_TO_SIZE (STM_SIZE_TO_PAGES (StmHeader->SwStmHdr.StaticImageSize)) +
               StmHeader->SwStmHdr.AdditionalDynamicMemorySize;
   StackSize                                         = StmHeader->SwStmHdr.PerProcDynamicMemorySize;
+  DEBUG ((EFI_D_INFO, "%a - Stack(%d) - StackSize = 0x%lx\n", __func__, (UINTN)Index, StackSize));
   mHostContextCommon.HostContextPerCpu[Index].Stack = (UINTN)(StackBase + StackSize * (Index + 1)); // Stack Top
 
   if ((VmxMisc.Uint64 & BIT15) != 0) {
@@ -1340,6 +1345,9 @@ SeaVmcallDispatcher (
     return;
   }
 
+  DEBUG ((DEBUG_ERROR, "[%a][L%d] - Register at 0x%p.\n", __func__, __LINE__, Register));
+  DEBUG ((DEBUG_ERROR, "[%a][L%d] - ServiceId (local stack var) at 0x%p.\n", __func__, __LINE__, &ServiceId));
+
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - Rax = 0x%lx.\n", __func__, __LINE__, Register->Rax));
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - Rcx = 0x%lx.\n", __func__, __LINE__, Register->Rcx));
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - Rdx = 0x%lx.\n", __func__, __LINE__, Register->Rdx));
@@ -1457,7 +1465,11 @@ SeaVmcallDispatcher (
       }
 
       DEBUG ((DEBUG_ERROR, "[%a][L%d] - mIsBspInitialized.\n", __func__, __LINE__));
-      ApInit (CpuIndex, Register);
+      // CpuIndex 0 is the BSP structure
+      if (ReadLocalApicId () != mHostContextCommon.HostContextPerCpu[0].ApicId) {
+        DEBUG ((DEBUG_ERROR, "[%a][L%d] - Performing AP stack init for CPU index %d.\n", __func__, __LINE__, CpuIndex));
+        ApInit (CpuIndex, Register);
+      }
 
       Status = GetResources (Register);
       DEBUG ((DEBUG_ERROR, "[%a][L%d] - Returned from GetResources(). Status = %r.\n", __func__, __LINE__, Status));

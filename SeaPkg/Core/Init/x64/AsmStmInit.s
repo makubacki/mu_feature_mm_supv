@@ -38,7 +38,7 @@ ASM_PFX(_ModuleEntryPoint):
 GoGetCapabilities:
   # Assume ThisOffset is 0
   # ESP is pointer to stack bottom, NOT top
-  movl $STM_STACK_SIZE, %eax     # eax = STM_STACK_SIZE, 
+  movl $STM_STACK_SIZE, %eax     # eax = STM_STACK_SIZE,
   lock xaddl %eax, (%esp)        # eax = ThisOffset, ThisOffset += STM_STACK_SIZE (LOCK instruction)
   addl $STM_STACK_SIZE, %eax     # eax = ThisOffset + STM_STACK_SIZE
   addl %eax, %esp                # esp += ThisOffset + STM_STACK_SIZE
@@ -57,7 +57,7 @@ GoGetCapabilities:
   push %rdi
   push %rsi
   push %rbp
-  push %rbp # should be rsp
+  push %rsp # should be rsp
   push %rbx
   push %rdx
   push %rcx
@@ -85,7 +85,7 @@ GoGetResources:
 
   # Assume ThisOffset is 0
   # ESP is pointer to stack bottom, NOT top
-  movl $STM_STACK_SIZE, %eax      # eax = STM_STACK_SIZE, 
+  movl $STM_STACK_SIZE, %eax      # eax = STM_STACK_SIZE,
   lock xaddl %eax, (%esp)         # eax = ThisOffset, ThisOffset += STM_STACK_SIZE (LOCK instruction)
   addl $STM_STACK_SIZE, %eax      # eax = ThisOffset + STM_STACK_SIZE
   addl %eax, %esp                 # esp += ThisOffset + STM_STACK_SIZE
@@ -104,7 +104,7 @@ GoGetResources:
   push %rdi
   push %rsi
   push %rbp
-  push %rbp # should be rsp
+  push %rsp # should be rsp
   push %rbx
   push %rdx
   push %rcx
