@@ -1340,6 +1340,9 @@ SeaVmcallDispatcher (
     return;
   }
 
+  DEBUG ((DEBUG_ERROR, "[%a][L%d] - Register at 0x%p.\n", __func__, __LINE__, Register));
+  DEBUG ((DEBUG_ERROR, "[%a][L%d] - ServiceId (local stack var) at 0x%p.\n", __func__, __LINE__, &ServiceId));
+
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - Rax = 0x%lx.\n", __func__, __LINE__, Register->Rax));
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - Rcx = 0x%lx.\n", __func__, __LINE__, Register->Rcx));
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - Rdx = 0x%lx.\n", __func__, __LINE__, Register->Rdx));
@@ -1457,7 +1460,10 @@ SeaVmcallDispatcher (
       }
 
       DEBUG ((DEBUG_ERROR, "[%a][L%d] - mIsBspInitialized.\n", __func__, __LINE__));
-      ApInit (CpuIndex, Register);
+      if (CpuIndex != 0) {
+        DEBUG ((DEBUG_ERROR, "[%a][L%d] - Performing AP stack init for CPU index %d.\n", __func__, __LINE__, CpuIndex));
+        ApInit (CpuIndex, Register);
+      }
 
       Status = GetResources (Register);
       DEBUG ((DEBUG_ERROR, "[%a][L%d] - Returned from GetResources(). Status = %r.\n", __func__, __LINE__, Status));

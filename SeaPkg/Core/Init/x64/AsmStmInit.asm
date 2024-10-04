@@ -10,7 +10,7 @@
 ; WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 ;
 ; Module Name:
-; 
+;
 ;    AsmStmInit.asm
 ;
 ;------------------------------------------------------------------------------
@@ -40,7 +40,7 @@ _ModuleEntryPoint PROC PUBLIC
 GoGetCapabilities:
   ; Assume ThisOffset is 0
   ; ESP is pointer to stack bottom, NOT top
-  mov  eax, STM_STACK_SIZE     ; eax = STM_STACK_SIZE, 
+  mov  eax, STM_STACK_SIZE     ; eax = STM_STACK_SIZE,
   lock xadd [esp], eax         ; eax = ThisOffset, ThisOffset += STM_STACK_SIZE (LOCK instruction)
   add  eax, STM_STACK_SIZE     ; eax = ThisOffset + STM_STACK_SIZE
   add  esp, eax                ; esp += ThisOffset + STM_STACK_SIZE
@@ -89,7 +89,7 @@ GoGetResources:
 
   ; Assume ThisOffset is 0
   ; ESP is pointer to stack bottom, NOT top
-  mov  eax, STM_STACK_SIZE     ; eax = STM_STACK_SIZE, 
+  mov  eax, STM_STACK_SIZE     ; eax = STM_STACK_SIZE,
   lock xadd [esp], eax         ; eax = ThisOffset, ThisOffset += STM_STACK_SIZE (LOCK instruction)
   add  eax, STM_STACK_SIZE     ; eax = ThisOffset + STM_STACK_SIZE
   add  esp, eax                ; esp += ThisOffset + STM_STACK_SIZE
@@ -110,7 +110,7 @@ GoGetResources:
   push rdi
   push rsi
   push rbp
-  push rbp ; should be rsp
+  push rsp ; should be rsp ; TODO: Print the rsp here and check the dump
   push rbx
   push rdx
   push rcx
