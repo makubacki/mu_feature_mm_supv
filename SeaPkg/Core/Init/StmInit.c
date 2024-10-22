@@ -416,7 +416,7 @@ GetIndexFromStack (
 
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - StmHeader at 0x%p.\n", __func__, __LINE__, StmHeader));
   DEBUG ((DEBUG_ERROR, "[%a][L%d] - ApicId is 0x%x.\n", __func__, __LINE__, GetApicId ()));
-  DEBUG ((DEBUG_ERROR, "[%a][L%d] - GetIndexFromStack is 0x%p.\n", __func__, __LINE__, GetIndexFromStack));
+  DEBUG ((DEBUG_ERROR, "[%a][L%d] - GetIndexFromStack (this function) is at 0x%p.\n", __func__, __LINE__, GetIndexFromStack));
 
   //
   // Stack top of this CPU
@@ -833,6 +833,8 @@ LaunchBack (
   //
   VmWriteN (VMCS_N_GUEST_RFLAGS_INDEX, VmReadN (VMCS_N_GUEST_RFLAGS_INDEX) & ~RFLAGS_CF);
 
+  DEBUG ((DEBUG_ERROR, "Register @ LaunchBack: 0x%lx\n", (UINTN)Register));
+
   DEBUG ((EFI_D_INFO, "!!!LaunchBack (%d)!!!\n", (UINTN)Index));
   DEBUG ((DEBUG_ERROR, "VMCS_32_CONTROL_VMEXIT_CONTROLS_INDEX: %08x\n", (UINTN)VmRead32 (VMCS_32_CONTROL_VMEXIT_CONTROLS_INDEX)));
   DEBUG ((DEBUG_ERROR, "VMCS_32_CONTROL_VMENTRY_CONTROLS_INDEX: %08x\n", (UINTN)VmRead32 (VMCS_32_CONTROL_VMENTRY_CONTROLS_INDEX)));
@@ -955,6 +957,7 @@ LaunchBack (
   DEBUG ((DEBUG_ERROR, "On Exit MSR IA32_VMX_CR4_FIXED0_MSR_INDEX: %08x\n", (UINTN)AsmReadMsr64 (IA32_VMX_CR4_FIXED0_MSR_INDEX)));
   DEBUG ((DEBUG_ERROR, "On Exit MSR IA32_VMX_CR4_FIXED1_MSR_INDEX: %08x\n", (UINTN)AsmReadMsr64 (IA32_VMX_CR4_FIXED1_MSR_INDEX)));
 
+  DEBUG ((DEBUG_ERROR, "Register @ LaunchBack Before AsmVmLaunch: 0x%lx\n", (UINTN)Register));
   Rflags = AsmVmLaunch (Register);
 
   AcquireSpinLock (&mHostContextCommon.DebugLock);
@@ -1448,10 +1451,12 @@ SeaVmcallDispatcher (
         DEBUG ((DEBUG_ERROR, "[%a][L%d] - After BspInit() call.\n", __func__, __LINE__));
       }
 
-      DEBUG ((DEBUG_ERROR, "[%a][L%d] - Calling CommonInit()...\n", __func__, __LINE__));
-
-      CommonInit (CpuIndex);
-      DEBUG ((DEBUG_ERROR, "[%a][L%d] - Returned from CommonInit().\n", __func__, __LINE__));
+      if (mHostContextCommon.HostContextPerCpu[CpuIndex].Stack == 0) {
+        DEBUG ((DEBUG_INFO, "[%a] - Performing common init for CPU %d for the first time.\n", __func__, CpuIndex));
+        DEBUG ((DEBUG_ERROR, "[%a][L%d] - Calling CommonInit()...\n", __func__, __LINE__));
+        CommonInit (CpuIndex);
+        DEBUG ((DEBUG_ERROR, "[%a][L%d] - Returned from CommonInit().\n", __func__, __LINE__));
+      }
       DEBUG ((DEBUG_ERROR, "[%a][L%d] - Calling GetCapabilities()...\n", __func__, __LINE__));
       Status = GetCapabilities (Register);
       DEBUG ((DEBUG_ERROR, "[%a][L%d] - Returned from GetCapabilities(). Status = %r.\n", __func__, __LINE__, Status));
@@ -1469,6 +1474,13 @@ SeaVmcallDispatcher (
       if (ReadLocalApicId () != mHostContextCommon.HostContextPerCpu[0].ApicId) {
         DEBUG ((DEBUG_ERROR, "[%a][L%d] - Performing AP stack init for CPU index %d.\n", __func__, __LINE__, CpuIndex));
         ApInit (CpuIndex, Register);
+      }
+
+      if (mHostContextCommon.HostContextPerCpu[CpuIndex].Stack == 0) {
+        DEBUG ((DEBUG_INFO, "[%a] - Performing common init for CPU %d for the first time.\n", __func__, CpuIndex));
+        DEBUG ((DEBUG_ERROR, "[%a][L%d] - Calling CommonInit()...\n", __func__, __LINE__));
+        CommonInit (CpuIndex);
+        DEBUG ((DEBUG_ERROR, "[%a][L%d] - Returned from CommonInit().\n", __func__, __LINE__));
       }
 
       Status = GetResources (Register);
