@@ -815,6 +815,23 @@ CommonInit (
 
 /**
 
+  This function restore STM data to original value.
+  Currently, we just zero updated data here - <common> in .DATA section and .BBS section.
+  It can be enhanced later.
+
+**/
+VOID
+RestoreStmData (
+  VOID
+  )
+{
+  ZeroMem (&mGuestContextCommonNormal, sizeof(mGuestContextCommonNormal));
+  ZeroMem (&mHostContextCommon, sizeof(mHostContextCommon));
+  mIsBspInitialized = FALSE;
+}
+
+/**
+
   This function launch back to MLE.
 
   @param Index    CPU index
@@ -826,7 +843,9 @@ LaunchBack (
   IN X86_REGISTER  *Register
   )
 {
-  UINTN  Rflags;
+  VM_ENTRY_CONTROLS VmEntryCtrls;
+  UINTN             Rflags;
+  UINT32            CurrentJoinedCpuNum;
 
   //
   // Indicate operation status from caller.
@@ -958,7 +977,55 @@ LaunchBack (
   DEBUG ((DEBUG_ERROR, "On Exit MSR IA32_VMX_CR4_FIXED1_MSR_INDEX: %08x\n", (UINTN)AsmReadMsr64 (IA32_VMX_CR4_FIXED1_MSR_INDEX)));
 
   DEBUG ((DEBUG_ERROR, "Register @ LaunchBack Before AsmVmLaunch: 0x%lx\n", (UINTN)Register));
-  Rflags = AsmVmLaunch (Register);
+
+  VmEntryCtrls.Uint32 = VmRead32 (VMCS_32_CONTROL_VMENTRY_CONTROLS_INDEX);
+  DEBUG ((DEBUG_ERROR, "VMCS_32_CONTROL_VMENTRY_CONTROLS_INDEX = 0x%x.\n", VmEntryCtrls.Uint32));
+  VmEntryCtrls.Bits.DeactivateDualMonitor = 1;
+  VmWrite32 (VMCS_32_CONTROL_VMENTRY_CONTROLS_INDEX, VmEntryCtrls.Uint32);
+  DEBUG ((DEBUG_ERROR, "VMCS_32_CONTROL_VMENTRY_CONTROLS_INDEX (after deactivate dual monitor) = 0x%x.\n", VmRead32 (VMCS_32_CONTROL_VMENTRY_CONTROLS_INDEX)));
+  VmWriteN (VMCS_N_GUEST_RIP_INDEX, VmReadN (VMCS_N_GUEST_RIP_INDEX) + VmRead32 (VMCS_32_RO_VMEXIT_INSTRUCTION_LENGTH_INDEX));
+
+  // Do not decrement unless needed
+  CurrentJoinedCpuNum = mHostContextCommon.JoinedCpuNum;
+  if (CurrentJoinedCpuNum > 0) {
+    CurrentJoinedCpuNum = InterlockedDecrement (&mHostContextCommon.JoinedCpuNum);
+  }
+  DEBUG ((DEBUG_ERROR, "CurrentJoinedCpuNum = %d.\n", CurrentJoinedCpuNum));
+
+  // We should not WaitAllProcessorRendezVous() because we can not assume VMM will invoke this at one time.
+
+  if (CurrentJoinedCpuNum == 0) {
+    DEBUG ((DEBUG_ERROR, "CurrentJoinedCpuNum was zero, restoring data and image.\n", CurrentJoinedCpuNum));
+    //
+    // If CurrentJoinedCpuNum is zero that means every CPUs has already run code above, it is safe to clean up the environment.
+    //
+
+    //
+    // Need reset [RSP] as 0, just in case that SINIT does not do it.
+    //
+    *(UINT32 *)((UINTN)mHostContextCommon.StmHeader + mHostContextCommon.StmHeader->HwStmHdr.EspOffset) = 0;
+
+    DEBUG ((DEBUG_ERROR, "Calling RestoreStmData()\n"));
+    //
+    // Restore data
+    //
+    RestoreStmData ();
+
+    DEBUG ((DEBUG_ERROR, "Calling RelocateStmImage()\n"));
+    //
+    // Relocate image back at last CPU
+    //
+    RelocateStmImage (TRUE);
+  }
+
+  DEBUG ((DEBUG_ERROR, "Calling AsmVmResume()\n"));
+  Rflags = AsmVmResume (Register);
+  // BUGBUG: - AsmVmLaunch if AsmVmResume fail
+  if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) == VmxFailErrorVmResumeWithNonLaunchedVmcs) {
+//    DEBUG ((DEBUG_INFO, "(STM):-(\n", (UINTN)Index));
+    DEBUG ((DEBUG_ERROR, "Calling AsmVmLaunch()\n"));
+    Rflags = AsmVmLaunch (Register);
+  }
 
   AcquireSpinLock (&mHostContextCommon.DebugLock);
   DEBUG ((DEBUG_ERROR, "!!!LaunchBack FAIL!!!\n"));
