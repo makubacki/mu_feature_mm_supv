@@ -16,4 +16,4 @@
 
 'language:python':
 - changed-files:
-  - '**/*.py'
+  - any-glob-to-any-file: '**/*.py'
