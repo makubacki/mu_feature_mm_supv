@@ -16,6 +16,8 @@ refactored from TianoCore common modules and public portion of AMD SMM superviso
 operating Standalone MM modules in a secure manner. Other peripheral libraries are also included to accomodate user
 module operations.
 
+Test changes
+
 Detailed Information
 ====================
 
