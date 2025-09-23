@@ -201,6 +201,8 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, CiSetupSettingsMan
             }
         ]
 
+    # Python file edit
+
     def GetPackagesPath(self):
         ''' Return a list of workspace relative paths that should be mapped as edk2 PackagesPath '''
         result = []
